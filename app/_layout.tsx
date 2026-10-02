@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import { SplashScreen } from 'expo-router';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { DeviceProvider } from '@/lib/DeviceContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   Vazirmatn_400Regular,
   Vazirmatn_500Medium,
@@ -33,11 +34,13 @@ export default function RootLayout() {
   }
 
   return (
-    <DeviceProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="dark" />
-    </DeviceProvider>
+    <ErrorBoundary>
+      <DeviceProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="dark" />
+      </DeviceProvider>
+    </ErrorBoundary>
   );
 }
