@@ -41,7 +41,7 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease--no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -54,6 +54,6 @@ jobs:
           tag_name: android-build-${{ github.run_number }}
           name: Android build #${{ github.run_number }}
           prerelease: true
-          files: android/app/build/outputs/apk/outputs/apk/release/app-release.apk
+          files: android/app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
