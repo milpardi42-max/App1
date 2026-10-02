@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Share, Linking, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, Share, Linking, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import {
   Smartphone,
   QrCode,
@@ -21,6 +22,7 @@ const AGENT_ROUTE = '/agent';
 const QR_API = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=';
 
 export default function ShareScreen() {
+  const router = useRouter();
   const [appUrl, setAppUrl] = useState('');
   const [qrUrl, setQrUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -58,12 +60,18 @@ export default function ShareScreen() {
   }, [appUrl]);
 
   const handleOpen = useCallback(() => {
+    if (Platform.OS !== 'web') {
+      // Inside the installed app, no need for an external URL —
+      // just navigate straight to the pairing screen that's already built in.
+      router.push(AGENT_ROUTE);
+      return;
+    }
     if (typeof window !== 'undefined') {
       window.open(appUrl, '_blank');
     } else {
       Linking.openURL(appUrl);
     }
-  }, [appUrl]);
+  }, [appUrl, router]);
 
   return (
     <ScrollView style={styles.screen}>
