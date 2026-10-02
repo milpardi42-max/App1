@@ -122,6 +122,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     backgroundColor: Colors.neutral[850],
+    borderWidth: 1,
+    borderColor: Colors.neutral[800],
     borderRadius: Radius.md,
     marginBottom: Spacing.sm,
     gap: Spacing.md,

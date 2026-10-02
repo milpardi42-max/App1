@@ -176,6 +176,8 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     backgroundColor: Colors.neutral[850],
+    borderWidth: 1,
+    borderColor: Colors.neutral[800],
     borderRadius: Radius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.md,
@@ -214,6 +216,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.neutral[850],
+    borderWidth: 1,
+    borderColor: Colors.neutral[800],
     borderRadius: Radius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.sm,

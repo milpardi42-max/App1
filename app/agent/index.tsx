@@ -167,10 +167,10 @@ export default function AgentHome() {
         <Pressable style={styles.pairBtn} onPress={handlePair} disabled={submitting}>
           <LinearGradient colors={[Colors.accent[500], Colors.accent[700]]} style={styles.pairBtnGradient}>
             {submitting ? (
-              <ActivityIndicator size="small" color={Colors.neutral[0]} />
+              <ActivityIndicator size="small" color={Colors.onColor} />
             ) : (
               <>
-                <Link2 size={18} color={Colors.neutral[0]} strokeWidth={2} />
+                <Link2 size={18} color={Colors.onColor} strokeWidth={2} />
                 <Text style={styles.pairBtnText}>اتصال به پنل مدیریت</Text>
               </>
             )}
@@ -223,15 +223,15 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error[400], flex: 1 },
   pairBtn: { width: '100%', borderRadius: Radius.lg, overflow: 'hidden' },
   pairBtnGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.lg, gap: Spacing.sm },
-  pairBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
-  hintCard: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginTop: Spacing.xl, width: '100%' },
+  pairBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.onColor },
+  hintCard: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginTop: Spacing.xl, width: '100%' },
   hintText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.neutral[400], flex: 1, lineHeight: 20 },
   pairedBody: { padding: Spacing.lg, paddingTop: 60, alignItems: 'center' },
   pairedHeader: { alignItems: 'center', marginBottom: Spacing.xl },
   pairedIconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.success[500] + '20', justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.lg },
   pairedTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   pairedSub: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[400], marginTop: Spacing.xs },
-  infoCard: { width: '100%', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md },
+  infoCard: { width: '100%', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginBottom: Spacing.md },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.neutral[800] },
   infoLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[400] },
   infoValue: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.medium, color: Colors.neutral[0] },

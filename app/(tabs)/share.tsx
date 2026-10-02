@@ -82,7 +82,7 @@ export default function ShareScreen() {
           style={styles.heroCard}
         >
           <View style={styles.heroIconWrap}>
-            <Smartphone size={32} color={Colors.neutral[0]} strokeWidth={2} />
+            <Smartphone size={32} color={Colors.onColor} strokeWidth={2} />
           </View>
           <Text style={styles.heroTitle}>برنامه گوشی دوم</Text>
           <Text style={styles.heroDesc}>
@@ -221,13 +221,13 @@ const styles = StyleSheet.create({
   body: { padding: Spacing.md, paddingBottom: 100 },
   heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.md },
   heroIconWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.md },
-  heroTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.neutral[0], textAlign: 'center' },
+  heroTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.onColor, textAlign: 'center' },
   heroDesc: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: Spacing.sm, lineHeight: 20 },
   qrCard: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.neutral[800] },
   qrHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
   qrTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   qrDesc: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.neutral[400], textAlign: 'center', marginBottom: Spacing.lg, lineHeight: 20 },
-  qrWrap: { backgroundColor: Colors.neutral[0], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md },
+  qrWrap: { backgroundColor: Colors.onColor, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md },
   qrImage: { width: 220, height: 220 },
   qrPlaceholder: { width: 220, height: 220, justifyContent: 'center', alignItems: 'center' },
   qrBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: Colors.warning[500] + '15', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.full },

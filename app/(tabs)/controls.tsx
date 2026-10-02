@@ -48,7 +48,7 @@ const quickCommands: QuickCommand[] = [
   { type: 'scan', label: 'اسکن امنیتی', description: 'اسکن کامل دستگاه', icon: Shield, gradient: [Colors.success[500], Colors.success[700]] },
   { type: 'backup', label: 'پشتیبان‌گیری', description: 'پشتیبان‌گیری کامل', icon: Cloud, gradient: [Colors.primary[400], Colors.primary[600]] },
   { type: 'clear_cache', label: 'پاکسازی حافظه', description: 'پاک کردن حافظه پنهان', icon: RefreshCw, gradient: [Colors.accent[400], Colors.accent[600]] },
-  { type: 'reboot', label: 'راه‌اندازی مجدد', description: 'ری‌استارت دستگاه', icon: Power, gradient: [Colors.neutral[600], Colors.neutral[800]] },
+  { type: 'reboot', label: 'راه‌اندازی مجدد', description: 'ری‌استارت دستگاه', icon: Power, gradient: [Colors.neutral[400], Colors.neutral[200]] },
 ];
 
 const statusConfig: Record<string, { color: string; label: string; icon: LucideIcon }> = {
@@ -143,7 +143,7 @@ export default function ControlsScreen() {
                 onPress={() => handleCommand(cmd)}
               >
                 <LinearGradient colors={cmd.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.commandIcon}>
-                  <Icon size={22} color={Colors.neutral[0]} strokeWidth={2} />
+                  <Icon size={22} color={Colors.onColor} strokeWidth={2} />
                 </LinearGradient>
                 <Text style={styles.commandLabel}>{cmd.label}</Text>
                 <Text style={styles.commandDesc} numberOfLines={1}>{cmd.description}</Text>
@@ -186,7 +186,7 @@ export default function ControlsScreen() {
             icon={BellOff}
             label="مزاحم نشوید"
             description="قطع اعلان‌ها و تماس‌ها"
-            gradient={[Colors.neutral[600], Colors.neutral[800]]}
+            gradient={[Colors.neutral[400], Colors.neutral[200]]}
             isEnabled={settings.do_not_disturb === 'true'}
             onToggle={() => toggle('do_not_disturb')}
           />
@@ -269,7 +269,7 @@ export default function ControlsScreen() {
             />
             <Pressable style={styles.modalSendBtn} onPress={sendMessage}>
               <LinearGradient colors={[Colors.accent[500], Colors.accent[700]]} style={styles.modalSendGradient}>
-                <Send size={18} color={Colors.neutral[0]} strokeWidth={2} />
+                <Send size={18} color={Colors.onColor} strokeWidth={2} />
                 <Text style={styles.modalSendText}>ارسال پیام</Text>
               </LinearGradient>
             </Pressable>
@@ -322,7 +322,7 @@ function ToggleRow({ icon: Icon, label, description, gradient, isEnabled, onTogg
     <View style={styles.toggleCard}>
       <View style={styles.toggleLeft}>
         <LinearGradient colors={gradient} style={styles.toggleIcon}>
-          <Icon size={18} color={Colors.neutral[0]} strokeWidth={2} />
+          <Icon size={18} color={Colors.onColor} strokeWidth={2} />
         </LinearGradient>
         <View style={styles.toggleInfo}>
           <Text style={styles.toggleLabel}>{label}</Text>
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   body: { padding: Spacing.md, paddingBottom: 100 },
   sectionLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[300], marginBottom: Spacing.sm, marginTop: Spacing.sm, textAlign: 'left' },
   commandsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Spacing.sm, marginBottom: Spacing.md },
-  commandCard: { width: '48%', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', gap: 6 },
+  commandCard: { width: '48%', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, alignItems: 'center', gap: 6 },
   commandIcon: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   commandLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   commandDesc: { fontFamily: Typography.fontFamily, fontSize: 10, color: Colors.neutral[500], textAlign: 'center' },
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   dangerBtn: { flex: 1, backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', gap: 6, borderWidth: 1, borderColor: Colors.error[500] + '30' },
   dangerLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, fontWeight: Typography.weights.medium, color: Colors.neutral[300] },
   toggleList: { gap: Spacing.sm, marginBottom: Spacing.md },
-  toggleCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md },
+  toggleCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md },
   toggleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 },
   toggleIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   toggleInfo: { flex: 1 },
@@ -359,10 +359,10 @@ const styles = StyleSheet.create({
   toggle: { width: 52, height: 30, borderRadius: 15, justifyContent: 'center', paddingHorizontal: 3 },
   toggleOn: { backgroundColor: Colors.accent[500] },
   toggleOff: { backgroundColor: Colors.neutral[700] },
-  toggleKnob: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.neutral[0] },
+  toggleKnob: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.onColor },
   knobOn: { alignSelf: 'flex-end' },
   knobOff: { alignSelf: 'flex-start' },
-  historyCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.sm },
+  historyCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginBottom: Spacing.sm },
   historyLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 },
   historyStatus: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   historyInfo: { flex: 1 },
@@ -374,13 +374,13 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: Spacing.md },
   emptyText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[500] },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
-  modalContent: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, padding: Spacing.lg, width: '100%', maxWidth: 400 },
+  modalContent: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.lg, width: '100%', maxWidth: 400 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   modalTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   modalInput: { backgroundColor: Colors.neutral[900], borderRadius: Radius.md, padding: Spacing.md, fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[0], minHeight: 80, borderWidth: 1, borderColor: Colors.neutral[800], textAlign: 'right' },
   modalSendBtn: { marginTop: Spacing.md, borderRadius: Radius.md, overflow: 'hidden' },
   modalSendGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.sm },
-  modalSendText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
+  modalSendText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.onColor },
   brightnessRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.neutral[900], borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.neutral[800] },
   brightnessInput: { flex: 1, fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.neutral[0], textAlign: 'center' },
   brightnessPct: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, color: Colors.neutral[400] },

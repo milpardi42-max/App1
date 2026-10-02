@@ -101,7 +101,7 @@ export default function DashboardScreen() {
         >
           <View style={styles.heroTop}>
             <View style={styles.heroIconWrap}>
-              <Smartphone size={28} color={Colors.neutral[0]} strokeWidth={2} />
+              <Smartphone size={28} color={Colors.onColor} strokeWidth={2} />
             </View>
             <View style={styles.heroStatus}>
               <View style={styles.heroStatusDot} />
@@ -275,15 +275,15 @@ const styles = StyleSheet.create({
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   heroIconWrap: { width: 56, height: 56, borderRadius: Radius.lg, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
   heroStatus: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.full },
-  heroStatusText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, fontWeight: Typography.weights.medium, color: Colors.neutral[0] },
+  heroStatusText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, fontWeight: Typography.weights.medium, color: Colors.onColor },
   heroStatusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success[400] },
-  heroDeviceName: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.neutral[0], marginTop: Spacing.md, textAlign: 'left' },
+  heroDeviceName: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.onColor, marginTop: Spacing.md, textAlign: 'left' },
   heroDeviceSub: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.7)', marginTop: 2, textAlign: 'left' },
   heroMetrics: { flexDirection: 'row', gap: Spacing.lg, marginTop: Spacing.md },
   heroMetric: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   heroMetricText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.8)' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Spacing.sm, marginBottom: Spacing.md },
-  sectionCard: { backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md },
+  sectionCard: { backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginBottom: Spacing.md },
   sectionTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
   resourceRow: { marginBottom: Spacing.md },

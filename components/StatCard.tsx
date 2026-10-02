@@ -21,7 +21,7 @@ export function StatCard({ icon: Icon, label, value, subValue, gradient, style }
       style={[styles.container, style]}
     >
       <View style={styles.iconBg}>
-        <Icon size={18} color={Colors.neutral[0]} strokeWidth={2} />
+        <Icon size={18} color={Colors.onColor} strokeWidth={2} />
       </View>
       <Text style={styles.value}>{value}</Text>
       {subValue && <Text style={styles.subValue}>{subValue}</Text>}
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontFamily,
     fontSize: Typography.sizes.xxl,
     fontWeight: Typography.weights.bold,
-    color: Colors.neutral[0],
+    color: Colors.onColor,
     marginTop: Spacing.sm,
   },
   subValue: {

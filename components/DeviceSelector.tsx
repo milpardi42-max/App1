@@ -195,7 +195,7 @@ export function DeviceSelector() {
                 <Pressable style={styles.createBtn} onPress={handleCreateDevice} disabled={submitting}>
                   <LinearGradient colors={[Colors.accent[500], Colors.accent[700]]} style={styles.createBtnGradient}>
                     {submitting ? (
-                      <ActivityIndicator size="small" color={Colors.neutral[0]} />
+                      <ActivityIndicator size="small" color={Colors.onColor} />
                     ) : (
                       <Text style={styles.createBtnText}>ایجاد و دریافت کد جفت‌سازی</Text>
                     )}
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontFamily: Typography.fontFamily, fontSize: 10, color: Colors.neutral[400] },
   dropdownOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
-  dropdown: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, padding: Spacing.md, width: '100%', maxWidth: 400 },
+  dropdown: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, width: '100%', maxWidth: 400 },
   dropdownHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   dropdownTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   deviceItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.md, paddingHorizontal: Spacing.sm, borderRadius: Radius.md, marginBottom: 4 },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   addDeviceBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.md, marginTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.neutral[800], justifyContent: 'center' },
   addDeviceText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.medium, color: Colors.accent[400] },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
-  modalContent: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, padding: Spacing.lg, width: '100%', maxWidth: 400 },
+  modalContent: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.lg, width: '100%', maxWidth: 400 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   modalTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   inputGroup: { marginBottom: Spacing.md },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error[400], marginBottom: Spacing.sm },
   createBtn: { borderRadius: Radius.md, overflow: 'hidden' },
   createBtnGradient: { justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.md },
-  createBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
+  createBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.onColor },
   codeDisplay: { alignItems: 'center' },
   codeDisplayLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[300], marginBottom: Spacing.lg, textAlign: 'center' },
   codeBox: { backgroundColor: Colors.neutral[900], borderRadius: Radius.lg, paddingVertical: Spacing.xl, paddingHorizontal: Spacing.xxl, borderWidth: 2, borderColor: Colors.accent[500] + '50', marginBottom: Spacing.lg },
@@ -258,5 +258,5 @@ const styles = StyleSheet.create({
   codeHint: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.neutral[400], textAlign: 'center', lineHeight: 20, marginBottom: Spacing.lg },
   doneBtn: { borderRadius: Radius.md, overflow: 'hidden', width: '100%' },
   doneBtnGradient: { justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.md },
-  doneBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
+  doneBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.onColor },
 });
