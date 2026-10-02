@@ -28,7 +28,7 @@ export default function ShareScreen() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const base = window.location.origin;
       const url = `${base}${AGENT_ROUTE}`;
       setAppUrl(url);
@@ -36,23 +36,33 @@ export default function ShareScreen() {
     } else {
       const url = `https://your-app-url.com${AGENT_ROUTE}`;
       setAppUrl(url);
+      // On native, the URL is a placeholder — but a non-empty URI is still
+      // required for the QR image to render.
       setQrUrl(`${QR_API}${encodeURIComponent(url)}`);
     }
   }, []);
 
   const handleShare = useCallback(async () => {
     try {
-      await Share.share({
-        message: `برنامه گوشی دوم را از این آدرس باز کنید:\n${appUrl}`,
-        url: appUrl,
-      });
+      if (Platform.OS === 'web') {
+        await Share.share({
+          message: `برنامه گوشی دوم را از این آدرس باز کنید:\n${appUrl}`,
+          url: appUrl,
+        });
+      } else {
+        // On native, `url` opens the file/URL directly after sharing — only
+        // share it as a text message here.
+        await Share.share({
+          message: `برنامه گوشی دوم را از این آدرس باز کنید:\n${appUrl}`,
+        });
+      }
     } catch {
       // noop
     }
   }, [appUrl]);
 
   const handleCopy = useCallback(() => {
-    if (typeof window !== 'undefined' && navigator.clipboard) {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(appUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

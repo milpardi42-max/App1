@@ -143,14 +143,14 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.bold,
     color: Colors.neutral[0],
     flex: 1,
-    textAlign: 'left',
+    textAlign: 'right',
   },
   dirBadge: { width: 22, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center' },
   description: {
     fontFamily: Typography.fontFamily,
     fontSize: Typography.sizes.sm,
     color: Colors.neutral[400],
-    textAlign: 'left',
+    textAlign: 'right',
   },
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 2 },
   typeLabel: {

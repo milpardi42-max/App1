@@ -25,8 +25,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: Colors.accent[600],
-        tabBarInactiveTintColor: Colors.neutral[500],
+        tabBarActiveTintColor: Colors.accent[700],
+        tabBarInactiveTintColor: Colors.neutral[400],
         tabBarLabelStyle: styles.tabLabel,
         tabBarShowLabel: true,
       }}>
@@ -91,7 +91,8 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xs,
+    fontSize: 13,
+    fontWeight: '500',
     marginTop: 2,
   },
   tabIconContainer: {
