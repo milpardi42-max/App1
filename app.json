@@ -11,6 +11,9 @@
     "ios": {
       "supportsTablet": true
     },
+    "android": {
+      "package": "com.devicecontrol.app"
+    },
     "web": {
       "bundler": "metro",
       "output": "static",
