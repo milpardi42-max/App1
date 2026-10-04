@@ -1,442 +1,566 @@
-// English-learning mini-app ("app 2"): today's home.
-// Kept fully separate from app 1 — this file is the only thing that owns this screen.
+// Agent home (phone 2) — two faces:
+//   not paired → elegant intro with the big "اتصال به گوشی اول" button
+//   paired     → live status dashboard + real device info being reported
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import {
-  Flame,
-  GraduationCap,
-  BookOpenCheck,
-  CalendarCheck2,
-  Sparkles,
-  LockOpen,
-  Lock,
-  Play,
-  ArrowLeft,
-  ClipboardList,
+  Smartphone,
+  Link2,
+  BatteryCharging,
+  Wifi,
+  HardDrive,
+  Cpu,
+  MapPin,
+  MailWarning,
+  CheckCircle2,
+  Unplug,
+  RefreshCw,
+  ShieldCheck,
+  Send,
 } from 'lucide-react-native';
 import { Colors, Typography, Spacing, Radius } from '@/lib/theme';
 import { toPersianDigits } from '@/lib/format';
-import { LESSONS, TOTAL_WORDS, type LangWord } from '@/lib/langContent';
-import { getContinueLessonId, getLessonMastery, getOverview, type Overview } from '@/lib/langProgress';
-import { AgentTopBar, LESSON_ICONS, ProgressBar, SpeakButton } from '@/components/LangShared';
+import { checkPairingStatus, markOffline, isSupabaseConfigured } from '@/lib/pairing';
+import { getPairingState, clearPairingState, clearDeviceId, type PairingState } from '@/lib/storage';
+import { clearRole } from '@/lib/role';
+import { useRealAgent, getAgentIdentity, type AgentSnapshot } from '@/lib/useRealAgent';
 
-function wordOfTheDay(): LangWord {
-  const day = Math.floor(Date.now() / 86_400_000);
-  const flat = LESSONS.flatMap((l) => l.words);
-  return flat[day % flat.length];
+function formatBytes(bytes: number | null): string {
+  if (bytes === null || bytes <= 0) return 'نامشخص';
+  const gb = bytes / (1024 * 1024 * 1024);
+  if (gb >= 1) return `${toPersianDigits(gb.toFixed(1))} گیگ`;
+  const mb = bytes / (1024 * 1024);
+  return `${toPersianDigits(mb.toFixed(0))} مگ`;
 }
 
-export default function AgentHome() {
+function batteryFa(level: number | null, state: string | null): string {
+  if (level === null) return 'نامشخص';
+  const pct = `${toPersianDigits(Math.round(level * 100))}٪`;
+  if (state === 'charging') return `${pct} (در حال شارژ)`;
+  if (state === 'full') return `${pct} (پر)`;
+  return pct;
+}
+
+function networkFa(type: string | null): string {
+  switch (type) {
+    case 'WIFI':
+      return 'وای‌فای';
+    case 'CELLULAR':
+      return 'اینترنت سیم‌کارت';
+    case 'NONE':
+      return 'بدون اینترنت';
+    default:
+      return type ?? 'نامشخص';
+  }
+}
+
+export default function AgentHomeScreen() {
   const router = useRouter();
-  const [overview, setOverview] = useState<Overview | null>(null);
-  const [continueId, setContinueId] = useState(1);
-  const [masteryMap, setMasteryMap] = useState<Record<number, number[]>>({});
-  const today = wordOfTheDay();
+  const [pairing, setPairing] = useState<PairingState | null>(null);
+  const [checking, setChecking] = useState(true);
+  const configured = isSupabaseConfigured();
 
-  const reload = useCallback(async () => {
-    const [o, cid] = await Promise.all([getOverview(), getContinueLessonId()]);
-    setOverview(o);
-    setContinueId(cid);
-    const entries = await Promise.all(LESSONS.map(async (l) => [l.id, await getLessonMastery(l.id)] as const));
-    setMasteryMap(Object.fromEntries(entries));
-  }, []);
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
-
+  // Verify the stored pairing is still valid (the dashboard might have removed it)
   useFocusEffect(
     useCallback(() => {
-      reload();
-    }, [reload]),
+      let active = true;
+      (async () => {
+        setChecking(true);
+        const stored = await getPairingState();
+        if (!active) return;
+        if (stored && configured) {
+          const status = await checkPairingStatus(stored.deviceId);
+          if (status !== 'approved') {
+            await clearPairingState();
+            await clearDeviceId();
+            if (active) {
+              setPairing(null);
+              setChecking(false);
+            }
+            return;
+          }
+        }
+        if (active) {
+          setPairing(stored);
+          setChecking(false);
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [configured]),
   );
 
-  const continueLesson = useMemo(() => LESSONS.find((l) => l.id === continueId) ?? LESSONS[0], [continueId]);
+  // Real reporting loop — only when paired
+  const agent = useRealAgent(pairing?.deviceId ?? null, !!pairing && configured);
 
-  const openQuiz = (lessonId: number) => {
-    router.push({ pathname: '/agent/quiz', params: { lessonId: String(lessonId) } } as never);
-  };
-  const openLesson = (lessonId: number) => {
-    router.push({ pathname: '/agent/lesson', params: { lessonId: String(lessonId) } } as never);
-  };
+  const disconnect = useCallback(async () => {
+    if (pairing) await markOffline(pairing.deviceId);
+    await clearPairingState();
+    await clearDeviceId();
+    setPairing(null);
+  }, [pairing]);
 
-  return (
-    <View style={styles.root}>
-      <AgentTopBar title="آموزش زبان انگلیسی" subtitle="با ۱۲ درس و ۱۴۴ واژه‌ی پرکاربرد" />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Hero — greeting + streak + XP */}
-        <LinearGradient colors={[Colors.primary[600], Colors.primary[800]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <View style={styles.heroRow}>
-            <View style={styles.heroTextCol}>
-              <Text style={styles.heroHello}>سلام، زبان‌آموز عزیز 👋</Text>
-              <Text style={styles.heroSub}>هر روز چند واژه تازه — زبانت هر روز بهتر می‌شود</Text>
-            </View>
-            <View style={styles.heroBadge}>
-              <Flame size={20} color={Colors.warning[400]} strokeWidth={2.5} />
-              <Text style={styles.heroBadgeValue}>{toPersianDigits(overview?.streak ?? 0)}</Text>
-              <Text style={styles.heroBadgeLabel}>روز متوالی</Text>
-            </View>
-          </View>
-          <View style={styles.heroXpRow}>
-            <View style={styles.heroXpChip}>
-              <Sparkles size={14} color={Colors.accent[400]} strokeWidth={2.5} />
-              <Text style={styles.heroXpText}>{toPersianDigits(overview?.xp ?? 0)} امتیاز</Text>
-            </View>
-            <View style={styles.heroXpChip}>
-              <BookOpenCheck size={14} color={Colors.success[400]} strokeWidth={2.5} />
-              <Text style={styles.heroXpText}>
-                {toPersianDigits(overview?.wordsMastered ?? 0)} از {toPersianDigits(TOTAL_WORDS)} واژه یاد گرفته
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
+  const switchRole = useCallback(async () => {
+    if (pairing) await markOffline(pairing.deviceId);
+    await clearPairingState();
+    await clearDeviceId();
+    await clearRole();
+    router.replace('/welcome' as never);
+  }, [pairing, router]);
 
-        {/* Word of the day */}
-        <View style={styles.wotCard}>
-          <View style={styles.wotHeader}>
-            <CalendarCheck2 size={16} color={Colors.accent[500]} strokeWidth={2.3} />
-            <Text style={styles.wotHeaderText}>واژه‌ی امروز</Text>
-          </View>
-          <View style={styles.wotBody}>
-            <View style={styles.wotWordCol}>
-              <Text style={styles.wotWord}>{today.en}</Text>
-              <Text style={styles.wotMeaning}>{today.fa}</Text>
-            </View>
-            <SpeakButton text={today.en} color={Colors.accent[500]} />
-          </View>
-          <Text style={styles.wotExample}>{today.ex}</Text>
-          <Text style={styles.wotExampleFa}>{today.exFa}</Text>
-        </View>
+  if (checking) {
+    return (
+      <View style={[styles.root, styles.center]}>
+        <ActivityIndicator size="large" color={Colors.accent[500]} />
+      </View>
+    );
+  }
 
-        {/* Continue CTA */}
-        <Pressable onPress={() => openLesson(continueLesson.id)}>
-          <LinearGradient colors={continueLesson.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.continueCard}>
-            <View style={styles.continueTextCol}>
-              <Text style={styles.continueKicker}>ادامه بده</Text>
-              <Text style={styles.continueTitle}>
-                درس {toPersianDigits(continueLesson.id)} — {continueLesson.title}
-              </Text>
-              <Text style={styles.continueSub}>{continueLesson.subtitle}</Text>
+  // ---------- not paired ----------
+  if (!pairing) {
+    return (
+      <ScrollView style={styles.root}>
+        <View style={styles.body}>
+          <LinearGradient
+            colors={[Colors.primary[600], Colors.accent[800]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
+          >
+            <View style={styles.heroIcon}>
+              <Smartphone size={36} color={Colors.onColor} strokeWidth={2} />
             </View>
-            <View style={styles.continuePlay}>
-              <Play size={22} color={Colors.onColor} strokeWidth={2.5} fill={Colors.onColor} />
-            </View>
+            <Text style={styles.heroTitle}>گوشی دوم</Text>
+            <Text style={styles.heroDesc}>
+              این برنامه را به گوشی اول (پنل مدیریت) متصل کنید تا وضعیت این گوشی به‌صورت زنده گزارش شود
+            </Text>
           </LinearGradient>
-        </Pressable>
 
-        {/* Daily overview chips */}
-        <View style={styles.statRow}>
-          <View style={styles.statChip}>
-            <Text style={styles.statValue}>{toPersianDigits(overview?.todayReviewed ?? 0)}</Text>
-            <Text style={styles.statLabel}>تکرار امروز</Text>
-          </View>
-          <View style={styles.statChip}>
-            <Text style={[styles.statValue, { color: Colors.accent[600] }]}>{toPersianDigits(overview?.wordsSeen ?? 0)}</Text>
-            <Text style={styles.statLabel}>واژه‌ی دیده‌شده</Text>
-          </View>
-          <View style={styles.statChip}>
-            <Text style={[styles.statValue, { color: Colors.success[500] }]}>{toPersianDigits(overview?.wordsMastered ?? 0)}</Text>
-            <Text style={styles.statLabel}>یاد گرفته</Text>
-          </View>
-        </View>
-
-        {/* Lessons */}
-        <Text style={styles.sectionTitle}>درس‌ها ({toPersianDigits(LESSONS.length)})</Text>
-        {LESSONS.map((lesson) => {
-          const Icon = LESSON_ICONS[lesson.icon] ?? Sparkles;
-          const mastery = masteryMap[lesson.id] ?? [];
-          const seen = mastery.filter((m) => m >= 1).length;
-          const pct = lesson.words.length ? seen / lesson.words.length : 0;
-          const locked = lesson.id > continueId && seen === 0;
-          return (
-            <Pressable
-              key={lesson.id}
-              style={[styles.lessonCard, locked && styles.lessonCardLocked]}
-              onPress={() => !locked && openLesson(lesson.id)}
+          <Pressable
+            style={[styles.bigBtn, !configured && { opacity: 0.5 }]}
+            disabled={!configured}
+            onPress={() => router.push('/agent/pair' as never)}
+          >
+            <LinearGradient
+              colors={[Colors.accent[500], Colors.accent[800]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.bigBtnGradient}
             >
-              <LinearGradient colors={lesson.gradient} style={styles.lessonIcon}>
-                <Icon size={20} color={Colors.onColor} strokeWidth={2.2} />
-              </LinearGradient>
-              <View style={styles.lessonInfo}>
-                <View style={styles.lessonTitleRow}>
-                  <Text style={styles.lessonTitle}>
-                    {toPersianDigits(lesson.id)}. {lesson.title}
-                  </Text>
-                  {locked ? (
-                    <Lock size={14} color={Colors.neutral[400]} strokeWidth={2.2} />
-                  ) : (
-                    <LockOpen size={14} color={Colors.success[500]} strokeWidth={2.2} />
-                  )}
-                </View>
-                <Text style={styles.lessonSub}>{lesson.subtitle}</Text>
-                <View style={styles.lessonFooterRow}>
-                  <ProgressBar value={pct} color={lesson.color} />
-                </View>
-                <Text style={styles.lessonProgressText}>
-                  {toPersianDigits(seen)} از {toPersianDigits(lesson.words.length)} واژه
-                </Text>
-              </View>
-              {!locked && pct >= 1 && (
-                <Pressable style={[styles.lessonQuizBtn, { backgroundColor: lesson.color + '18', borderColor: lesson.color + '50' }]} onPress={() => openQuiz(lesson.id)}>
-                  <ClipboardList size={15} color={lesson.color} strokeWidth={2.2} />
-                  <Text style={[styles.lessonQuizText, { color: lesson.color }]}>آزمون</Text>
-                </Pressable>
-              )}
-              {!locked && pct < 1 && (
-                <View style={styles.lessonChevron}>
-                  <ArrowLeft size={16} color={Colors.neutral[400]} strokeWidth={2.3} />
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
+              <Link2 size={22} color={Colors.onColor} strokeWidth={2.4} />
+              <Text style={styles.bigBtnText}>اتصال به گوشی اول</Text>
+            </LinearGradient>
+          </Pressable>
 
-        <View style={styles.footer}>
-          <GraduationCap size={16} color={Colors.neutral[400]} strokeWidth={2} />
-          <Text style={styles.footerText}>یادت نره — هر روز چند واژه، زبانت را بهتر می‌کند 🌱</Text>
+          {!configured && (
+            <View style={styles.noticeCard}>
+              <MailWarning size={18} color={Colors.warning[400]} strokeWidth={2} />
+              <Text style={styles.noticeText}>
+                اتصال سرور هنوز فعال نشده است. پس از فعال‌سازی سرور، دکمه‌ی اتصال روشن می‌شود.
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.featuresCard}>
+            <Text style={styles.featuresTitle}>پس از اتصال، این اطلاعات به‌صورت زنده ارسال می‌شود:</Text>
+            <FeatureRow icon={BatteryCharging} text="میزان و وضعیت شارژ باتری" color={Colors.success[500]} />
+            <FeatureRow icon={Wifi} text="نوع اینترنت (وای‌فای / سیم‌کارت)" color={Colors.primary[400]} />
+            <FeatureRow icon={HardDrive} text="حافظه‌ی خالی و کل گوشی" color={Colors.warning[400]} />
+            <FeatureRow icon={MapPin} text="موقعیت مکانی (با اجازه‌ی شما)" color={Colors.error[400]} />
+            <FeatureRow icon={ShieldCheck} text="اجرای دستورات گوشی اول (پیدا کردن، صدا زدن، پیام)" color={Colors.accent[500]} />
+          </View>
+
+          <Text style={styles.footerNote}>
+            مدل این دستگاه: {getAgentIdentity().deviceModel} • {getAgentIdentity().osVersion}
+          </Text>
+          <Pressable onPress={switchRole} hitSlop={10}>
+            <Text style={styles.switchRoleLink}>تغییر نقش این گوشی</Text>
+          </Pressable>
         </View>
       </ScrollView>
+    );
+  }
+
+  // ---------- paired ----------
+  const snap: AgentSnapshot | null = agent.snapshot;
+  return (
+    <ScrollView style={styles.root}>
+      <View style={styles.body}>
+        {/* status hero */}
+        <LinearGradient
+          colors={[Colors.success[500], '#065f46']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <View style={styles.statusRow}>
+            <View style={styles.liveDot} />
+            <Text style={styles.statusText}>متصل و فعال</Text>
+          </View>
+          <Text style={styles.heroTitle}>{pairing.deviceName}</Text>
+          <Text style={styles.heroDesc}>
+            {agent.syncing
+              ? 'در حال ارسال گزارش…'
+              : agent.lastSync
+                ? `آخرین گزارش: ${toPersianDigits(
+                    agent.lastSync.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+                  )}`
+                : 'آماده‌ی ارسال گزارش'}
+          </Text>
+        </LinearGradient>
+
+        {/* incoming message from phone 1 */}
+        {agent.incomingMessage && (
+          <View style={styles.messageCard}>
+            <View style={styles.messageHeader}>
+              <Send size={18} color={Colors.warning[400]} strokeWidth={2.2} />
+              <Text style={styles.messageTitle}>پیام از گوشی اول</Text>
+            </View>
+            <Text style={styles.messageText}>{agent.incomingMessage}</Text>
+            <Pressable style={styles.messageBtn} onPress={agent.dismissMessage}>
+              <CheckCircle2 size={17} color={Colors.onColor} strokeWidth={2.2} />
+              <Text style={styles.messageBtnText}>خواندم</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* info grid */}
+        <View style={styles.gridTitleRow}>
+          <Text style={styles.gridTitle}>اطلاعاتی که ارسال می‌شود</Text>
+          <RefreshCw size={15} color={agent.syncing ? Colors.accent[500] : Colors.neutral[600]} strokeWidth={2.2} />
+        </View>
+
+        <View style={styles.grid}>
+          <InfoTile
+            icon={BatteryCharging}
+            color={Colors.success[500]}
+            label="باتری"
+            value={batteryFa(snap?.batteryLevel ?? null, snap?.batteryState ?? null)}
+          />
+          <InfoTile
+            icon={Wifi}
+            color={Colors.primary[400]}
+            label="اینترنت"
+            value={networkFa(snap?.networkType ?? null)}
+          />
+          <InfoTile
+            icon={HardDrive}
+            color={Colors.warning[400]}
+            label="حافظه‌ی خالی"
+            value={snap ? formatBytes(snap.freeStorage) : '…'}
+          />
+          <InfoTile
+            icon={Cpu}
+            color={Colors.accent[500]}
+            label="حافظه‌ی رم"
+            value={snap ? formatBytes(snap.totalMemory) : '…'}
+          />
+          <InfoTile
+            icon={MapPin}
+            color={Colors.error[400]}
+            label="موقعیت مکانی"
+            value={
+              snap?.latitude != null && snap?.longitude != null
+                ? `${toPersianDigits(snap.latitude.toFixed(3))}, ${toPersianDigits(snap.longitude.toFixed(3))}`
+                : agent.locationGranted
+                  ? 'در حال دریافت…'
+                  : 'اجازه داده نشده'
+            }
+          />
+          <InfoTile
+            icon={Smartphone}
+            color={Colors.neutral[300]}
+            label="مدل"
+            value={getAgentIdentity().deviceModel}
+          />
+        </View>
+
+        <Pressable style={styles.disconnectBtn} onPress={disconnect}>
+          <Unplug size={18} color={Colors.error[400]} strokeWidth={2.2} />
+          <Text style={styles.disconnectText}>قطع اتصال از گوشی اول</Text>
+        </Pressable>
+
+        <Pressable onPress={switchRole} hitSlop={10} style={{ marginTop: Spacing.lg, alignSelf: 'center' }}>
+          <Text style={styles.switchRoleLink}>تغییر نقش این گوشی</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
+  );
+}
+
+function FeatureRow({ icon: Icon, text, color }: { icon: typeof Wifi; text: string; color: string }) {
+  return (
+    <View style={styles.featureRow}>
+      <View style={[styles.featureIcon, { backgroundColor: color + '18' }]}>
+        <Icon size={16} color={color} strokeWidth={2.2} />
+      </View>
+      <Text style={styles.featureText}>{text}</Text>
+    </View>
+  );
+}
+
+function InfoTile({
+  icon: Icon,
+  color,
+  label,
+  value,
+}: {
+  icon: typeof Wifi;
+  color: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.tile}>
+      <View style={[styles.featureIcon, { backgroundColor: color + '18' }]}>
+        <Icon size={18} color={color} strokeWidth={2.2} />
+      </View>
+      <Text style={styles.tileLabel}>{label}</Text>
+      <Text style={styles.tileValue} numberOfLines={2}>
+        {value}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
-  scroll: { flex: 1 },
-  scrollContent: { padding: Spacing.md, paddingBottom: 60, gap: Spacing.md },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  body: { padding: Spacing.lg, paddingBottom: Spacing.xxl + 24 },
 
-  hero: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md },
-  heroRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
-  heroTextCol: { flex: 1, alignItems: 'flex-end' },
-  heroHello: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xl,
-    fontWeight: Typography.weights.bold,
-    color: Colors.onColor,
-    textAlign: 'right',
-  },
-  heroSub: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'right',
-    marginTop: 6,
-    lineHeight: 18,
-  },
-  heroBadge: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: Radius.lg,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    marginRight: Spacing.md,
-  },
-  heroBadgeValue: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xl,
-    fontWeight: Typography.weights.bold,
-    color: Colors.onColor,
-    marginTop: 4,
-  },
-  heroBadgeLabel: {
-    fontFamily: Typography.fontFamily,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-  },
-  heroXpRow: { flexDirection: 'row-reverse', gap: Spacing.sm, flexWrap: 'wrap' },
-  heroXpChip: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
-    borderRadius: Radius.full,
-  },
-  heroXpText: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.onColor,
-    fontWeight: Typography.weights.medium,
-  },
-
-  wotCard: {
-    backgroundColor: Colors.neutral[850],
+  hero: {
     borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: Colors.neutral[800],
-    padding: Spacing.lg,
-    gap: Spacing.sm,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
-  wotHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6 },
-  wotHeaderText: {
+  heroIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  heroTitle: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.xxl,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onColor,
+    textAlign: 'center',
+  },
+  heroDesc: {
     fontFamily: Typography.fontFamily,
     fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.bold,
-    color: Colors.accent[500],
-  },
-  wotBody: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  wotWordCol: { flex: 1, alignItems: 'flex-end' },
-  wotWord: {
-    fontFamily: Typography.fontFamily,
-    fontSize: 30,
-    fontWeight: Typography.weights.bold,
-    color: Colors.neutral[0],
-    textAlign: 'right',
-  },
-  wotMeaning: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.md,
-    color: Colors.neutral[300],
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  wotExample: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.sm,
-    color: Colors.neutral[200],
-    textAlign: 'left',
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
     marginTop: Spacing.sm,
-  },
-  wotExampleFa: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.neutral[400],
-    textAlign: 'right',
+    lineHeight: 22,
   },
 
-  continueCard: {
-    borderRadius: Radius.xl,
-    padding: Spacing.lg,
+  statusRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: Spacing.sm },
+  liveDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#bbf7d0',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  statusText: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.bold,
+    color: '#dcfce7',
+  },
+
+  bigBtn: { borderRadius: Radius.xl, overflow: 'hidden', marginBottom: Spacing.lg },
+  bigBtnGradient: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: Spacing.lg,
   },
-  continueTextCol: { flex: 1, alignItems: 'flex-end' },
-  continueKicker: {
-    fontFamily: Typography.fontFamily,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'right',
-    fontWeight: Typography.weights.medium,
-  },
-  continueTitle: {
+  bigBtnText: {
     fontFamily: Typography.fontFamily,
     fontSize: Typography.sizes.lg,
     fontWeight: Typography.weights.bold,
     color: Colors.onColor,
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  continueSub: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  continuePlay: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.md,
   },
 
-  statRow: { flexDirection: 'row-reverse', gap: Spacing.sm },
-  statChip: {
-    flex: 1,
-    backgroundColor: Colors.neutral[850],
+  noticeCard: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.warning[500] + '12',
+    borderWidth: 1,
+    borderColor: Colors.warning[500] + '45',
     borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  noticeText: {
+    flex: 1,
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.warning[400],
+    lineHeight: 21,
+    textAlign: 'right',
+  },
+
+  featuresCard: {
+    backgroundColor: Colors.neutral[850],
+    borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Colors.neutral[800],
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    gap: 4,
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
-  statValue: {
-    fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xl,
-    fontWeight: Typography.weights.bold,
-    color: Colors.neutral[0],
-  },
-  statLabel: {
-    fontFamily: Typography.fontFamily,
-    fontSize: 10,
-    color: Colors.neutral[400],
-    textAlign: 'center',
-  },
-
-  sectionTitle: {
+  featuresTitle: {
     fontFamily: Typography.fontFamily,
     fontSize: Typography.sizes.md,
     fontWeight: Typography.weights.bold,
-    color: Colors.neutral[100],
+    color: Colors.neutral[0],
     textAlign: 'right',
-    marginTop: Spacing.sm,
+    marginBottom: 2,
   },
-  lessonCard: {
+  featureRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: Spacing.sm },
+  featureIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureText: {
+    flex: 1,
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.neutral[300],
+    textAlign: 'right',
+    lineHeight: 20,
+  },
+
+  footerNote: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.neutral[600],
+    textAlign: 'center',
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  switchRoleLink: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.neutral[500],
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+
+  gridTitleRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+  },
+  gridTitle: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.lg,
+    fontWeight: Typography.weights.bold,
+    color: Colors.neutral[0],
+  },
+  grid: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  tile: {
+    width: '48.5%',
     backgroundColor: Colors.neutral[850],
     borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.neutral[800],
     padding: Spacing.md,
-    gap: Spacing.md,
+    gap: 6,
   },
-  lessonCardLocked: { opacity: 0.45 },
-  lessonIcon: { width: 46, height: 46, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  lessonInfo: { flex: 1, alignItems: 'flex-end' },
-  lessonTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
-  lessonTitle: {
+  tileLabel: {
     fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.md,
+    fontSize: Typography.sizes.xs,
+    color: Colors.neutral[400],
+    textAlign: 'right',
+  },
+  tileValue: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
     fontWeight: Typography.weights.bold,
     color: Colors.neutral[0],
     textAlign: 'right',
+    lineHeight: 20,
   },
-  lessonSub: {
+
+  messageCard: {
+    backgroundColor: Colors.warning[500] + '12',
+    borderWidth: 1.5,
+    borderColor: Colors.warning[500] + '55',
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  messageHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
+  messageTitle: {
     fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.neutral[400],
-    textAlign: 'right',
-    marginTop: 2,
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
+    color: Colors.warning[400],
   },
-  lessonFooterRow: { width: '100%', marginTop: Spacing.sm },
-  lessonProgressText: {
+  messageText: {
     fontFamily: Typography.fontFamily,
-    fontSize: 10,
-    color: Colors.neutral[500],
+    fontSize: Typography.sizes.md,
+    color: Colors.neutral[100],
     textAlign: 'right',
-    marginTop: 4,
+    lineHeight: 24,
   },
-  lessonQuizBtn: {
+  messageBtn: {
+    alignSelf: 'flex-start',
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 8,
-    borderRadius: Radius.md,
-    borderWidth: 1,
+    gap: 6,
+    backgroundColor: Colors.warning[500],
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    marginTop: 4,
   },
-  lessonQuizText: {
+  messageBtnText: {
     fontFamily: Typography.fontFamily,
-    fontSize: 11,
+    fontSize: Typography.sizes.sm,
     fontWeight: Typography.weights.bold,
+    color: Colors.onColor,
   },
-  lessonChevron: { paddingHorizontal: 4 },
 
-  footer: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: Spacing.sm, paddingBottom: Spacing.lg },
-  footerText: {
+  disconnectBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.error[500] + '50',
+    backgroundColor: Colors.error[500] + '0D',
+  },
+  disconnectText: {
     fontFamily: Typography.fontFamily,
-    fontSize: Typography.sizes.xs,
-    color: Colors.neutral[400],
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
+    color: Colors.error[400],
   },
 });

@@ -78,7 +78,7 @@ export function AgentTopBar({ title, subtitle }: { title: string; subtitle?: str
         <Text style={topBarStyles.title}>{title}</Text>
         {subtitle ? <Text style={topBarStyles.subtitle}>{subtitle}</Text> : null}
       </View>
-      <Pressable style={topBarStyles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/agent'))}>
+      <Pressable style={topBarStyles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/lang'))}>
         <ChevronRight size={20} color={Colors.neutral[200]} strokeWidth={2.5} />
       </Pressable>
     </View>

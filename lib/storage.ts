@@ -1,52 +1,80 @@
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = 'agent_device_id';
 const SELECTED_DEVICE_KEY = 'selected_device_id';
+const PAIRING_STATE_KEY = 'agent_pairing_state';
 
-// NOTE: `AsyncStorage` was removed from the core `react-native` package years ago
-// (it now lives in the separate `@react-native-async-storage/async-storage` package,
-// which this project does not currently depend on). `require('react-native').AsyncStorage`
-// is always `undefined` on native, so the previous implementation silently failed every
-// time it was called. This in-memory fallback at least keeps values stable for the
-// lifetime of the app (pairing won't have to be redone every screen), even though it
-// won't survive a full app restart yet. A proper fix is to add
-// `@react-native-async-storage/async-storage` as a dependency.
-const memoryStore = new Map<string, string>();
+// Values are cached in memory as well so reads stay stable even if a
+// transient AsyncStorage error occurs, and so the first read in a session
+// can be warmed by `warmStorageCache()`.
+const memoryCache = new Map<string, string>();
 
-export async function getDeviceId(): Promise<string | null> {
-  if (Platform.OS === 'web') {
-    return localStorage.getItem(STORAGE_KEY);
+async function get(key: string): Promise<string | null> {
+  try {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    const value = await AsyncStorage.getItem(key);
+    if (value !== null) memoryCache.set(key, value);
+    return value ?? memoryCache.get(key) ?? null;
+  } catch {
+    return memoryCache.get(key) ?? null;
   }
-  return memoryStore.get(STORAGE_KEY) ?? null;
 }
 
-export async function setDeviceId(id: string): Promise<void> {
-  if (Platform.OS === 'web') {
-    localStorage.setItem(STORAGE_KEY, id);
-    return;
+async function set(key: string, value: string): Promise<void> {
+  memoryCache.set(key, value);
+  try {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+      return;
+    }
+    await AsyncStorage.setItem(key, value);
+  } catch {
+    // Keep the in-memory copy — persistence failure should never crash the app.
   }
-  memoryStore.set(STORAGE_KEY, id);
 }
 
-export async function clearDeviceId(): Promise<void> {
-  if (Platform.OS === 'web') {
-    localStorage.removeItem(STORAGE_KEY);
-    return;
+async function clear(key: string): Promise<void> {
+  memoryCache.delete(key);
+  try {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(key);
+      return;
+    }
+    await AsyncStorage.removeItem(key);
+  } catch {
+    // ignore
   }
-  memoryStore.delete(STORAGE_KEY);
 }
 
-export async function getSelectedDeviceId(): Promise<string | null> {
-  if (Platform.OS === 'web') {
-    return localStorage.getItem(SELECTED_DEVICE_KEY);
-  }
-  return memoryStore.get(SELECTED_DEVICE_KEY) ?? null;
+export const getDeviceId = () => get(STORAGE_KEY);
+export const setDeviceId = (id: string) => set(STORAGE_KEY, id);
+export const clearDeviceId = () => clear(STORAGE_KEY);
+
+export const getSelectedDeviceId = () => get(SELECTED_DEVICE_KEY);
+export const setSelectedDeviceId = (id: string) => set(SELECTED_DEVICE_KEY, id);
+
+// Full pairing snapshot for the agent app: device id + a small JSON blob with
+// the device name shown to the user and the time pairing completed.
+export interface PairingState {
+  deviceId: string;
+  deviceName: string;
+  pairedAt: string;
 }
 
-export async function setSelectedDeviceId(id: string): Promise<void> {
-  if (Platform.OS === 'web') {
-    localStorage.setItem(SELECTED_DEVICE_KEY, id);
-    return;
+export async function getPairingState(): Promise<PairingState | null> {
+  const raw = await get(PAIRING_STATE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as PairingState;
+  } catch {
+    return null;
   }
-  memoryStore.set(SELECTED_DEVICE_KEY, id);
 }
+
+export const setPairingState = (state: PairingState) =>
+  set(PAIRING_STATE_KEY, JSON.stringify(state));
+
+export const clearPairingState = () => clear(PAIRING_STATE_KEY);

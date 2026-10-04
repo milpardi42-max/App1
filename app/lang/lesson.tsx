@@ -66,7 +66,7 @@ export default function LessonScreen() {
 
           <Pressable
             style={[styles.finishBtn, { backgroundColor: lesson.color }]}
-            onPress={() => router.push({ pathname: '/agent/quiz', params: { lessonId: String(lessonId) } } as never)}
+            onPress={() => router.push({ pathname: '/lang/quiz', params: { lessonId: String(lessonId) } } as never)}
           >
             <ClipboardList size={18} color={Colors.onColor} strokeWidth={2.3} />
             <Text style={styles.finishBtnText}>آزمون این درس</Text>
