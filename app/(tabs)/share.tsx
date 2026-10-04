@@ -235,7 +235,7 @@ function FeatureItem({ icon: Icon, text }: { icon: typeof Zap; text: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
   body: { padding: Spacing.md, paddingBottom: 100 },
   heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.md },
   heroIconWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.md },

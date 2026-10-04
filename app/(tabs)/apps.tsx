@@ -170,8 +170,8 @@ export default function AppsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
-  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
+  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center', direction: 'rtl' },
   body: { padding: Spacing.md, paddingBottom: 100 },
   summaryRow: {
     flexDirection: 'row',

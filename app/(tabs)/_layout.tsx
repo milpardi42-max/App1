@@ -97,6 +97,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     borderTopWidth: 1,
     paddingTop: 4,
+    // react-native-screens renders the tab bar in its own native view, so the
+    // top-level RTL wrapper doesn't reach it — make the tab bar RTL explicitly
+    // (dashboard appears on the right, like a Persian app should).
+    direction: 'rtl',
   },
   tabLabel: {
     fontFamily: Typography.fontFamily,

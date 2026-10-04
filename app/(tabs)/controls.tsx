@@ -337,8 +337,8 @@ function ToggleRow({ icon: Icon, label, description, gradient, isEnabled, onTogg
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
-  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
+  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center', direction: 'rtl' },
   body: { padding: Spacing.md, paddingBottom: 100 },
   sectionLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[300], marginBottom: Spacing.sm, marginTop: Spacing.sm, textAlign: 'right' },
   commandsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Spacing.sm, marginBottom: Spacing.md },
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   historyStatusText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xs, fontWeight: Typography.weights.medium },
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: Spacing.md },
   emptyText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[500] },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg, direction: 'rtl' },
   modalContent: { backgroundColor: Colors.neutral[850], borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.lg, width: '100%', maxWidth: 400 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
   modalTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },

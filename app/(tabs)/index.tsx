@@ -268,8 +268,8 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
-  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
+  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center', direction: 'rtl' },
   body: { padding: Spacing.md, paddingBottom: 100 },
   heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, marginBottom: Spacing.md },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

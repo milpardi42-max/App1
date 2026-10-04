@@ -198,7 +198,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
   center: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center' },
   pairBody: { padding: Spacing.xl, paddingTop: 60, alignItems: 'center' },
   pairHeader: { alignItems: 'center', marginBottom: Spacing.xl },

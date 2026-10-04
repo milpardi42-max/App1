@@ -246,8 +246,8 @@ function SecurityRow({ icon: Icon, label, value, color }: { icon: LucideIcon; la
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
-  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
+  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center', direction: 'rtl' },
   body: { padding: Spacing.md, paddingBottom: 100 },
   scoreCard: { borderRadius: Radius.xl, padding: Spacing.lg, marginBottom: Spacing.md },
   scoreTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
