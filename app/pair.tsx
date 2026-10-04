@@ -50,6 +50,7 @@ export default function PairScreen() {
   const configured = isSupabaseConfigured();
 
   const [session, setSession] = useState<PairingSession | null>(null);
+  const [sessionError, setSessionError] = useState(false);
   const [pending, setPending] = useState<Device[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const remain = useCountdown(session?.expiresAt ?? null);
@@ -61,11 +62,10 @@ export default function PairScreen() {
     const old = sessionRef.current;
     if (old) cancelPairingSession(old.id);
     setSession(null);
+    setSessionError(false);
     const fresh = await createPairingSession();
     setSession(fresh);
-    if (!fresh) {
-      // Probably no server yet — nothing else to do; UI shows the notice.
-    }
+    if (!fresh) setSessionError(true);
   }, [configured]);
 
   useFocusEffect(
@@ -157,6 +157,13 @@ export default function PairScreen() {
                       در گوشی دوم دکمه‌ی «اتصال به گوشی اول» را بزنید و این کد را وارد یا اسکن کنید
                     </Text>
                   </>
+                ) : sessionError ? (
+                  <View style={{ alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.md }}>
+                    <XCircle size={30} color={Colors.error[400]} strokeWidth={2} />
+                    <Text style={styles.codeHint}>
+                      ساخت کد ممکن نشد. اتصال اینترنت و تنظیمات سرور را بررسی کنید.
+                    </Text>
+                  </View>
                 ) : (
                   <ActivityIndicator size="large" color={Colors.onColor} style={{ marginVertical: Spacing.xl }} />
                 )}
