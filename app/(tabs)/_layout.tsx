@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, Platform, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   LayoutDashboard,
   Activity,
@@ -18,11 +19,23 @@ function TabBarIcon({ icon: Icon, color, focused }: { icon: typeof LayoutDashboa
 }
 
 export default function TabLayout() {
+  // The phone's system navigation bar (gesture / 3-button) overlaps the
+  // bottom of the app on Android 15+ (edge-to-edge). Adding its height to the
+  // tab bar keeps the icons AND their Persian labels fully visible above it.
+  const insets = useSafeAreaInsets();
+  const bottomInset = Platform.OS === 'web' ? 0 : insets.bottom;
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: 68 + bottomInset,
+            paddingBottom: 8 + bottomInset,
+          },
+        ],
         tabBarActiveTintColor: Colors.accent[700],
         tabBarInactiveTintColor: Colors.neutral[400],
         tabBarLabelStyle: styles.tabLabel,
@@ -83,8 +96,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: -2 },
     borderTopWidth: 1,
-    height: Platform.OS === 'web' ? 64 : 80,
-    paddingBottom: Platform.OS === 'web' ? 8 : 12,
     paddingTop: 4,
   },
   tabLabel: {
@@ -92,18 +103,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     marginTop: 2,
-  },
-  tabIconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 48,
-    height: 28,
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: -6,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
   },
 });
