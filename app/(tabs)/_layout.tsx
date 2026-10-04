@@ -11,12 +11,10 @@ import {
 import { Colors, Typography } from '@/lib/theme';
 
 function TabBarIcon({ icon: Icon, color, focused }: { icon: typeof LayoutDashboard; color: string; focused: boolean }) {
-  return (
-    <View style={styles.tabIconContainer}>
-      <Icon size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-      {focused && <View style={[styles.tabIndicator, { backgroundColor: color }]} />}
-    </View>
-  );
+  // Keep this as a plain icon — the custom wrapper View with an absolutely
+  // positioned indicator was pushing icons outside the tab bar frame on the
+  // device (especially with large system font scale).
+  return <Icon size={23} color={color} strokeWidth={focused ? 2.5 : 2} />;
 }
 
 export default function TabLayout() {
@@ -40,7 +38,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'فعالیت‌ها',
+          title: 'فعالیت',
           tabBarIcon: ({ color, focused }) => <TabBarIcon icon={Activity} color={color} focused={focused} />,
         }}
       />
@@ -54,7 +52,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="controls"
         options={{
-          title: 'کنترل از راه دور',
+          title: 'کنترل',
           tabBarIcon: ({ color, focused }) => <TabBarIcon icon={Command} color={color} focused={focused} />,
         }}
       />
@@ -68,7 +66,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="share"
         options={{
-          title: 'دریافت اپ',
+          title: 'دریافت',
           tabBarIcon: ({ color, focused }) => <TabBarIcon icon={Smartphone} color={color} focused={focused} />,
         }}
       />
@@ -87,11 +85,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     height: Platform.OS === 'web' ? 64 : 80,
     paddingBottom: Platform.OS === 'web' ? 8 : 12,
-    paddingTop: 8,
+    paddingTop: 4,
   },
   tabLabel: {
     fontFamily: Typography.fontFamily,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '500',
     marginTop: 2,
   },

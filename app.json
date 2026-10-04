@@ -39,8 +39,12 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "baseUrl": "/App1"
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "sitemap": false
+      }
     }
   }
 }

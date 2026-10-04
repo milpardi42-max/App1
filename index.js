@@ -11,7 +11,19 @@
  * global error handler, so installing it here, first, lets us catch errors that happen
  * even before the React tree exists (where a React ErrorBoundary cannot help).
  */
-import { Alert } from 'react-native';
+import { Alert, I18nManager } from 'react-native';
+
+// This is a Persian (Farsi) app — its UI is always RTL regardless of the
+// phone's system language. Setting it here, at the very top of the entry file,
+// makes sure it runs before ANY other module so the direction is applied
+// from the very first frame.
+try {
+  I18nManager.allowRTL(true);
+  I18nManager.forceRTL(true);
+} catch (rtlError) {
+  // Fall through silently — the layout wrapper in app/_layout.tsx also
+  // forces RTL visually via `direction: 'rtl'`.
+}
 
 try {
   const ErrorUtilsGlobal = global.ErrorUtils;
