@@ -14,7 +14,7 @@ interface ScreenHeaderProps {
 export function ScreenHeader({ title, subtitle, icon: Icon }: ScreenHeaderProps) {
   return (
     <LinearGradient
-      colors={[Colors.neutral[900], Colors.neutral[950]]}
+      colors={[Colors.neutral[850], Colors.neutral[950]]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       style={styles.container}
@@ -23,7 +23,7 @@ export function ScreenHeader({ title, subtitle, icon: Icon }: ScreenHeaderProps)
         <View style={styles.leftSection}>
           {Icon && (
             <View style={styles.iconWrap}>
-              <Icon size={22} color={Colors.accent[400]} strokeWidth={2} />
+              <Icon size={22} color={Colors.accent[600]} strokeWidth={2} />
             </View>
           )}
           <View>
@@ -44,6 +44,8 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[800],
   },
   content: {
     flexDirection: 'row',

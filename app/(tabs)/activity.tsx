@@ -141,7 +141,7 @@ export default function ActivityScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
   body: { padding: Spacing.md, paddingBottom: 100 },
   searchWrap: {
     flexDirection: 'row',

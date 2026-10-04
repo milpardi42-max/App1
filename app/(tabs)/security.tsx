@@ -84,7 +84,7 @@ export default function SecurityScreen() {
         >
           <View style={styles.scoreTop}>
             <View style={styles.scoreIconWrap}>
-              {score >= 70 ? <ShieldCheck size={28} color={Colors.neutral[0]} strokeWidth={2} /> : <ShieldAlert size={28} color={Colors.neutral[0]} strokeWidth={2} />}
+              {score >= 70 ? <ShieldCheck size={28} color={Colors.onColor} strokeWidth={2} /> : <ShieldAlert size={28} color={Colors.onColor} strokeWidth={2} />}
             </View>
             <View>
               <Text style={styles.scoreLabel}>امتیاز امنیتی</Text>
@@ -93,7 +93,7 @@ export default function SecurityScreen() {
           </View>
           <View style={styles.scoreBar}>
             <View style={styles.scoreBarTrack}>
-              <View style={[styles.scoreBarFill, { width: `${score}%`, backgroundColor: Colors.neutral[0] }]} />
+              <View style={[styles.scoreBarFill, { width: `${score}%`, backgroundColor: Colors.onColor }]} />
             </View>
           </View>
           <Text style={styles.scoreStatus}>
@@ -246,37 +246,37 @@ function SecurityRow({ icon: Icon, label, value, color }: { icon: LucideIcon; la
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
-  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
+  loadingContainer: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center', direction: 'rtl' },
   body: { padding: Spacing.md, paddingBottom: 100 },
   scoreCard: { borderRadius: Radius.xl, padding: Spacing.lg, marginBottom: Spacing.md },
   scoreTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   scoreIconWrap: { width: 56, height: 56, borderRadius: Radius.lg, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
   scoreLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: 'rgba(255,255,255,0.8)' },
-  scoreValue: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.neutral[0], marginTop: 2 },
+  scoreValue: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.onColor, marginTop: 2 },
   scoreBar: { marginTop: Spacing.md },
   scoreBarTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4, overflow: 'hidden' },
   scoreBarFill: { height: '100%', borderRadius: 4 },
   scoreStatus: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: 'rgba(255,255,255,0.85)', marginTop: Spacing.sm, fontWeight: Typography.weights.medium },
-  quickStatsRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md },
+  quickStatsRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginBottom: Spacing.md },
   quickStat: { alignItems: 'center', gap: 4 },
   quickStatIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   quickStatValue: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xl, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
   quickStatLabel: { fontFamily: Typography.fontFamily, fontSize: 10, color: Colors.neutral[400] },
-  sectionLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[300], marginBottom: Spacing.sm, marginTop: Spacing.sm, textAlign: 'left' },
-  deviceSecurityCard: { backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md },
+  sectionLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[300], marginBottom: Spacing.sm, marginTop: Spacing.sm, textAlign: 'right' },
+  deviceSecurityCard: { backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginBottom: Spacing.md },
   securityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.neutral[800] },
   securityRowLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   securityRowLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[300] },
   securityRowRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   securityDot: { width: 8, height: 8, borderRadius: 4 },
   securityRowValue: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, fontWeight: Typography.weights.medium },
-  tabSelector: { flexDirection: 'row', backgroundColor: Colors.neutral[850], borderRadius: Radius.md, padding: 4, marginBottom: Spacing.md },
+  tabSelector: { flexDirection: 'row', backgroundColor: Colors.neutral[850], borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.neutral[800], padding: 4, marginBottom: Spacing.md },
   tab: { flex: 1, paddingVertical: Spacing.sm, alignItems: 'center', borderRadius: 8 },
   tabActive: { backgroundColor: Colors.accent[500] + '30' },
   tabText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, fontWeight: Typography.weights.medium, color: Colors.neutral[400] },
   tabTextActive: { color: Colors.accent[300] },
-  eventCard: { flexDirection: 'row', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.sm, borderLeftWidth: 3 },
+  eventCard: { flexDirection: 'row', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginBottom: Spacing.sm, borderLeftWidth: 3 },
   eventIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
   eventContent: { flex: 1, gap: 6 },
   eventTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
@@ -284,15 +284,15 @@ const styles = StyleSheet.create({
   severityText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xs, fontWeight: Typography.weights.medium },
   resolvedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: Radius.full, backgroundColor: Colors.success[500] + '20' },
   resolvedText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xs, fontWeight: Typography.weights.medium, color: Colors.success[400] },
-  eventDesc: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.neutral[300], textAlign: 'left' },
+  eventDesc: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.neutral[300], textAlign: 'right' },
   eventTime: { fontFamily: Typography.fontFamily, fontSize: 10, color: Colors.neutral[600] },
   resolveBtn: { alignSelf: 'flex-start', backgroundColor: Colors.accent[500] + '30', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: 8, marginTop: 4, borderWidth: 1, borderColor: Colors.accent[400] + '50' },
   resolveBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xs, fontWeight: Typography.weights.medium, color: Colors.accent[300] },
-  contactCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.sm, gap: Spacing.md },
+  contactCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.neutral[800], padding: Spacing.md, marginBottom: Spacing.sm, gap: Spacing.md },
   contactAvatar: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   contactAvatarText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold },
   contactInfo: { flex: 1 },
-  contactName: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[0], textAlign: 'left' },
+  contactName: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.bold, color: Colors.neutral[0], textAlign: 'right' },
   contactPhone: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.neutral[400] },
   contactLast: { fontFamily: Typography.fontFamily, fontSize: 10, color: Colors.neutral[600], marginTop: 2 },
   blockContactBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: Colors.error[500] + '15', justifyContent: 'center', alignItems: 'center' },

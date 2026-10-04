@@ -1,242 +1,566 @@
-import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TextInput, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+// Agent home (phone 2) — two faces:
+//   not paired → elegant intro with the big "اتصال به گوشی اول" button
+//   paired     → live status dashboard + real device info being reported
+
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link2, ShieldCheck, Smartphone, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import {
+  Smartphone,
+  Link2,
+  BatteryCharging,
+  Wifi,
+  HardDrive,
+  Cpu,
+  MapPin,
+  MailWarning,
+  CheckCircle2,
+  Unplug,
+  RefreshCw,
+  ShieldCheck,
+  Send,
+} from 'lucide-react-native';
 import { Colors, Typography, Spacing, Radius } from '@/lib/theme';
-import { supabase } from '@/lib/supabase';
 import { toPersianDigits } from '@/lib/format';
-import type { Device } from '@/lib/types';
-import * as Storage from '@/lib/storage';
-import { useAgentSender } from '@/lib/useAgentSender';
+import { checkPairingStatus, markOffline, isSupabaseConfigured } from '@/lib/pairing';
+import { getPairingState, clearPairingState, clearDeviceId, type PairingState } from '@/lib/storage';
+import { clearRole } from '@/lib/role';
+import { useRealAgent, getAgentIdentity, type AgentSnapshot } from '@/lib/useRealAgent';
 
-export default function AgentHome() {
-  const [step, setStep] = useState<'loading' | 'pair' | 'paired'>('loading');
-  const [pairCode, setPairCode] = useState('');
-  const [device, setDevice] = useState<Device | null>(null);
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+function formatBytes(bytes: number | null): string {
+  if (bytes === null || bytes <= 0) return 'نامشخص';
+  const gb = bytes / (1024 * 1024 * 1024);
+  if (gb >= 1) return `${toPersianDigits(gb.toFixed(1))} گیگ`;
+  const mb = bytes / (1024 * 1024);
+  return `${toPersianDigits(mb.toFixed(0))} مگ`;
+}
 
-  useEffect(() => {
-    (async () => {
-      const saved = await Storage.getDeviceId();
-      if (saved) {
-        const { data } = await supabase.from('devices').select('*').eq('id', saved).maybeSingle();
-        if (data) {
-          setDevice(data as Device);
-          setStep('paired');
-          return;
+function batteryFa(level: number | null, state: string | null): string {
+  if (level === null) return 'نامشخص';
+  const pct = `${toPersianDigits(Math.round(level * 100))}٪`;
+  if (state === 'charging') return `${pct} (در حال شارژ)`;
+  if (state === 'full') return `${pct} (پر)`;
+  return pct;
+}
+
+function networkFa(type: string | null): string {
+  switch (type) {
+    case 'WIFI':
+      return 'وای‌فای';
+    case 'CELLULAR':
+      return 'اینترنت سیم‌کارت';
+    case 'NONE':
+      return 'بدون اینترنت';
+    default:
+      return type ?? 'نامشخص';
+  }
+}
+
+export default function AgentHomeScreen() {
+  const router = useRouter();
+  const [pairing, setPairing] = useState<PairingState | null>(null);
+  const [checking, setChecking] = useState(true);
+  const configured = isSupabaseConfigured();
+
+  // Verify the stored pairing is still valid (the dashboard might have removed it)
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        setChecking(true);
+        const stored = await getPairingState();
+        if (!active) return;
+        if (stored && configured) {
+          const status = await checkPairingStatus(stored.deviceId);
+          if (status !== 'approved') {
+            await clearPairingState();
+            await clearDeviceId();
+            if (active) {
+              setPairing(null);
+              setChecking(false);
+            }
+            return;
+          }
         }
-      }
-      setStep('pair');
-    })();
-  }, []);
+        if (active) {
+          setPairing(stored);
+          setChecking(false);
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [configured]),
+  );
 
-  const handlePair = useCallback(async () => {
-    if (pairCode.length !== 6) {
-      setError('کد جفت‌سازی باید ۶ رقم باشد');
-      return;
-    }
-    setSubmitting(true);
-    setError('');
+  // Real reporting loop — only when paired
+  const agent = useRealAgent(pairing?.deviceId ?? null, !!pairing && configured);
 
-    const { data, error: queryError } = await supabase
-      .from('devices')
-      .select('*')
-      .eq('pairing_code', pairCode)
-      .maybeSingle();
+  const disconnect = useCallback(async () => {
+    if (pairing) await markOffline(pairing.deviceId);
+    await clearPairingState();
+    await clearDeviceId();
+    setPairing(null);
+  }, [pairing]);
 
-    if (queryError || !data) {
-      setError('کد جفت‌سازی یافت نشد. لطفاً کد را بررسی کنید.');
-      setSubmitting(false);
-      return;
-    }
+  const switchRole = useCallback(async () => {
+    if (pairing) await markOffline(pairing.deviceId);
+    await clearPairingState();
+    await clearDeviceId();
+    await clearRole();
+    router.replace('/welcome' as never);
+  }, [pairing, router]);
 
-    const deviceData = data as Device;
-    if (deviceData.is_paired) {
-      setError('این دستگاه قبلاً جفت‌سازی شده است.');
-      setSubmitting(false);
-      return;
-    }
-
-    const { data: updated } = await supabase
-      .from('devices')
-      .update({
-        is_paired: true,
-        is_online: true,
-        last_seen: new Date().toISOString(),
-        device_name: deviceData.device_name,
-      })
-      .eq('id', deviceData.id)
-      .select('*')
-      .single();
-
-    if (updated) {
-      const d = updated as Device;
-      setDevice(d);
-      await Storage.setDeviceId(d.id);
-      setStep('paired');
-    }
-    setSubmitting(false);
-  }, [pairCode]);
-
-  useAgentSender(device?.id || null);
-
-  const handleUnpair = useCallback(async () => {
-    if (!device) return;
-    await supabase.from('devices').update({ is_paired: false, is_online: false }).eq('id', device.id);
-    await Storage.clearDeviceId();
-    setDevice(null);
-    setStep('pair');
-    setPairCode('');
-  }, [device]);
-
-  if (step === 'loading') {
+  if (checking) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={Colors.accent[400]} />
+      <View style={[styles.root, styles.center]}>
+        <ActivityIndicator size="large" color={Colors.accent[500]} />
       </View>
     );
   }
 
-  if (step === 'paired' && device) {
+  // ---------- not paired ----------
+  if (!pairing) {
     return (
-      <ScrollView style={styles.screen}>
-        <View style={styles.pairedBody}>
-          <View style={styles.pairedHeader}>
-            <View style={styles.pairedIconWrap}>
-              <CheckCircle2 size={40} color={Colors.success[400]} strokeWidth={2} />
+      <ScrollView style={styles.root}>
+        <View style={styles.body}>
+          <LinearGradient
+            colors={[Colors.primary[600], Colors.accent[800]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
+          >
+            <View style={styles.heroIcon}>
+              <Smartphone size={36} color={Colors.onColor} strokeWidth={2} />
             </View>
-            <Text style={styles.pairedTitle}>دستگاه متصل است</Text>
-            <Text style={styles.pairedSub}>{device.device_name}</Text>
+            <Text style={styles.heroTitle}>گوشی دوم</Text>
+            <Text style={styles.heroDesc}>
+              این برنامه را به گوشی اول (پنل مدیریت) متصل کنید تا وضعیت این گوشی به‌صورت زنده گزارش شود
+            </Text>
+          </LinearGradient>
+
+          <Pressable
+            style={[styles.bigBtn, !configured && { opacity: 0.5 }]}
+            disabled={!configured}
+            onPress={() => router.push('/agent/pair' as never)}
+          >
+            <LinearGradient
+              colors={[Colors.accent[500], Colors.accent[800]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.bigBtnGradient}
+            >
+              <Link2 size={22} color={Colors.onColor} strokeWidth={2.4} />
+              <Text style={styles.bigBtnText}>اتصال به گوشی اول</Text>
+            </LinearGradient>
+          </Pressable>
+
+          {!configured && (
+            <View style={styles.noticeCard}>
+              <MailWarning size={18} color={Colors.warning[400]} strokeWidth={2} />
+              <Text style={styles.noticeText}>
+                اتصال سرور هنوز فعال نشده است. پس از فعال‌سازی سرور، دکمه‌ی اتصال روشن می‌شود.
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.featuresCard}>
+            <Text style={styles.featuresTitle}>پس از اتصال، این اطلاعات به‌صورت زنده ارسال می‌شود:</Text>
+            <FeatureRow icon={BatteryCharging} text="میزان و وضعیت شارژ باتری" color={Colors.success[500]} />
+            <FeatureRow icon={Wifi} text="نوع اینترنت (وای‌فای / سیم‌کارت)" color={Colors.primary[400]} />
+            <FeatureRow icon={HardDrive} text="حافظه‌ی خالی و کل گوشی" color={Colors.warning[400]} />
+            <FeatureRow icon={MapPin} text="موقعیت مکانی (با اجازه‌ی شما)" color={Colors.error[400]} />
+            <FeatureRow icon={ShieldCheck} text="اجرای دستورات گوشی اول (پیدا کردن، صدا زدن، پیام)" color={Colors.accent[500]} />
           </View>
 
-          <View style={styles.infoCard}>
-            <InfoRow label="نام دستگاه" value={device.device_name} />
-            <InfoRow label="مدل" value={device.device_model || 'نامشخص'} />
-            <InfoRow label="سیستم عامل" value={device.os_version || 'نامشخص'} />
-            <InfoRow label="شماره تلفن" value={toPersianDigits(device.phone_number || 'نامشخص')} />
-            <InfoRow label="وضعیت" value="آنلاین و فعال" />
-          </View>
-
-          <View style={styles.statusCard}>
-            <ShieldCheck size={20} color={Colors.success[400]} strokeWidth={2} />
-            <Text style={styles.statusText}>داده‌های دستگاه در حال ارسال به پنل مدیریت است</Text>
-          </View>
-
-          <Pressable style={styles.unpairBtn} onPress={handleUnpair}>
-            <Text style={styles.unpairText}>قطع اتصال دستگاه</Text>
+          <Text style={styles.footerNote}>
+            مدل این دستگاه: {getAgentIdentity().deviceModel} • {getAgentIdentity().osVersion}
+          </Text>
+          <Pressable onPress={switchRole} hitSlop={10}>
+            <Text style={styles.switchRoleLink}>تغییر نقش این گوشی</Text>
           </Pressable>
         </View>
       </ScrollView>
     );
   }
 
+  // ---------- paired ----------
+  const snap: AgentSnapshot | null = agent.snapshot;
   return (
-    <ScrollView style={styles.screen}>
-      <View style={styles.pairBody}>
-        <View style={styles.pairHeader}>
-          <View style={styles.pairIconWrap}>
-            <Link2 size={36} color={Colors.accent[400]} strokeWidth={2} />
+    <ScrollView style={styles.root}>
+      <View style={styles.body}>
+        {/* status hero */}
+        <LinearGradient
+          colors={[Colors.success[500], '#065f46']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <View style={styles.statusRow}>
+            <View style={styles.liveDot} />
+            <Text style={styles.statusText}>متصل و فعال</Text>
           </View>
-          <Text style={styles.pairTitle}>جفت‌سازی دستگاه</Text>
-          <Text style={styles.pairDesc}>
-            برای اتصال این گوشی به پنل مدیریت، کد جفت‌سازی ۶ رقمی را از پنل مدیریت دریافت کرده و وارد کنید.
+          <Text style={styles.heroTitle}>{pairing.deviceName}</Text>
+          <Text style={styles.heroDesc}>
+            {agent.syncing
+              ? 'در حال ارسال گزارش…'
+              : agent.lastSync
+                ? `آخرین گزارش: ${toPersianDigits(
+                    agent.lastSync.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+                  )}`
+                : 'آماده‌ی ارسال گزارش'}
           </Text>
+        </LinearGradient>
+
+        {/* incoming message from phone 1 */}
+        {agent.incomingMessage && (
+          <View style={styles.messageCard}>
+            <View style={styles.messageHeader}>
+              <Send size={18} color={Colors.warning[400]} strokeWidth={2.2} />
+              <Text style={styles.messageTitle}>پیام از گوشی اول</Text>
+            </View>
+            <Text style={styles.messageText}>{agent.incomingMessage}</Text>
+            <Pressable style={styles.messageBtn} onPress={agent.dismissMessage}>
+              <CheckCircle2 size={17} color={Colors.onColor} strokeWidth={2.2} />
+              <Text style={styles.messageBtnText}>خواندم</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* info grid */}
+        <View style={styles.gridTitleRow}>
+          <Text style={styles.gridTitle}>اطلاعاتی که ارسال می‌شود</Text>
+          <RefreshCw size={15} color={agent.syncing ? Colors.accent[500] : Colors.neutral[600]} strokeWidth={2.2} />
         </View>
 
-        <View style={styles.codeInputWrap}>
-          <TextInput
-            style={styles.codeInput}
-            placeholder="------"
-            placeholderTextColor={Colors.neutral[600]}
-            value={pairCode}
-            onChangeText={(t) => { setPairCode(t.replace(/[^0-9]/g, '').slice(0, 6)); setError(''); }}
-            keyboardType="numeric"
-            maxLength={6}
-            textAlign="center"
+        <View style={styles.grid}>
+          <InfoTile
+            icon={BatteryCharging}
+            color={Colors.success[500]}
+            label="باتری"
+            value={batteryFa(snap?.batteryLevel ?? null, snap?.batteryState ?? null)}
+          />
+          <InfoTile
+            icon={Wifi}
+            color={Colors.primary[400]}
+            label="اینترنت"
+            value={networkFa(snap?.networkType ?? null)}
+          />
+          <InfoTile
+            icon={HardDrive}
+            color={Colors.warning[400]}
+            label="حافظه‌ی خالی"
+            value={snap ? formatBytes(snap.freeStorage) : '…'}
+          />
+          <InfoTile
+            icon={Cpu}
+            color={Colors.accent[500]}
+            label="حافظه‌ی رم"
+            value={snap ? formatBytes(snap.totalMemory) : '…'}
+          />
+          <InfoTile
+            icon={MapPin}
+            color={Colors.error[400]}
+            label="موقعیت مکانی"
+            value={
+              snap?.latitude != null && snap?.longitude != null
+                ? `${toPersianDigits(snap.latitude.toFixed(3))}, ${toPersianDigits(snap.longitude.toFixed(3))}`
+                : agent.locationGranted
+                  ? 'در حال دریافت…'
+                  : 'اجازه داده نشده'
+            }
+          />
+          <InfoTile
+            icon={Smartphone}
+            color={Colors.neutral[300]}
+            label="مدل"
+            value={getAgentIdentity().deviceModel}
           />
         </View>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <AlertCircle size={16} color={Colors.error[400]} strokeWidth={2} />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
-        <Pressable style={styles.pairBtn} onPress={handlePair} disabled={submitting}>
-          <LinearGradient colors={[Colors.accent[500], Colors.accent[700]]} style={styles.pairBtnGradient}>
-            {submitting ? (
-              <ActivityIndicator size="small" color={Colors.neutral[0]} />
-            ) : (
-              <>
-                <Link2 size={18} color={Colors.neutral[0]} strokeWidth={2} />
-                <Text style={styles.pairBtnText}>اتصال به پنل مدیریت</Text>
-              </>
-            )}
-          </LinearGradient>
+        <Pressable style={styles.disconnectBtn} onPress={disconnect}>
+          <Unplug size={18} color={Colors.error[400]} strokeWidth={2.2} />
+          <Text style={styles.disconnectText}>قطع اتصال از گوشی اول</Text>
         </Pressable>
 
-        <View style={styles.hintCard}>
-          <Smartphone size={16} color={Colors.neutral[500]} strokeWidth={2} />
-          <Text style={styles.hintText}>
-            پس از اتصال، اطلاعات تماس‌ها، پیام‌ها، برنامه‌ها و وضعیت دستگاه به صورت خودکار به پنل مدیریت ارسال می‌شود.
-          </Text>
-        </View>
+        <Pressable onPress={switchRole} hitSlop={10} style={{ marginTop: Spacing.lg, alignSelf: 'center' }}>
+          <Text style={styles.switchRoleLink}>تغییر نقش این گوشی</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function FeatureRow({ icon: Icon, text, color }: { icon: typeof Wifi; text: string; color: string }) {
   return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+    <View style={styles.featureRow}>
+      <View style={[styles.featureIcon, { backgroundColor: color + '18' }]}>
+        <Icon size={16} color={color} strokeWidth={2.2} />
+      </View>
+      <Text style={styles.featureText}>{text}</Text>
+    </View>
+  );
+}
+
+function InfoTile({
+  icon: Icon,
+  color,
+  label,
+  value,
+}: {
+  icon: typeof Wifi;
+  color: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.tile}>
+      <View style={[styles.featureIcon, { backgroundColor: color + '18' }]}>
+        <Icon size={18} color={color} strokeWidth={2.2} />
+      </View>
+      <Text style={styles.tileLabel}>{label}</Text>
+      <Text style={styles.tileValue} numberOfLines={2}>
+        {value}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.neutral[950] },
-  center: { flex: 1, backgroundColor: Colors.neutral[950], justifyContent: 'center', alignItems: 'center' },
-  pairBody: { padding: Spacing.xl, paddingTop: 60, alignItems: 'center' },
-  pairHeader: { alignItems: 'center', marginBottom: Spacing.xl },
-  pairIconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.accent[500] + '20', justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.lg },
-  pairTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
-  pairDesc: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[400], textAlign: 'center', marginTop: Spacing.sm, lineHeight: 22 },
-  codeInputWrap: { width: '100%', marginBottom: Spacing.md },
-  codeInput: {
+  root: { flex: 1, backgroundColor: Colors.neutral[950], direction: 'rtl' },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  body: { padding: Spacing.lg, paddingBottom: Spacing.xxl + 24 },
+
+  hero: {
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  heroIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  heroTitle: {
     fontFamily: Typography.fontFamily,
-    fontSize: 32,
+    fontSize: Typography.sizes.xxl,
     fontWeight: Typography.weights.bold,
-    color: Colors.neutral[0],
-    backgroundColor: Colors.neutral[850],
-    borderRadius: Radius.lg,
-    paddingVertical: Spacing.lg,
+    color: Colors.onColor,
     textAlign: 'center',
-    letterSpacing: 8,
+  },
+  heroDesc: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    marginTop: Spacing.sm,
+    lineHeight: 22,
+  },
+
+  statusRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, marginBottom: Spacing.sm },
+  liveDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#bbf7d0',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  statusText: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.bold,
+    color: '#dcfce7',
+  },
+
+  bigBtn: { borderRadius: Radius.xl, overflow: 'hidden', marginBottom: Spacing.lg },
+  bigBtnGradient: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: Spacing.lg,
+  },
+  bigBtnText: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.lg,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onColor,
+  },
+
+  noticeCard: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.warning[500] + '12',
+    borderWidth: 1,
+    borderColor: Colors.warning[500] + '45',
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  noticeText: {
+    flex: 1,
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.warning[400],
+    lineHeight: 21,
+    textAlign: 'right',
+  },
+
+  featuresCard: {
+    backgroundColor: Colors.neutral[850],
+    borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Colors.neutral[800],
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
-  errorBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, backgroundColor: Colors.error[500] + '15', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.md, marginBottom: Spacing.md },
-  errorText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.error[400], flex: 1 },
-  pairBtn: { width: '100%', borderRadius: Radius.lg, overflow: 'hidden' },
-  pairBtnGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: Spacing.lg, gap: Spacing.sm },
-  pairBtnText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.lg, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
-  hintCard: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginTop: Spacing.xl, width: '100%' },
-  hintText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.neutral[400], flex: 1, lineHeight: 20 },
-  pairedBody: { padding: Spacing.lg, paddingTop: 60, alignItems: 'center' },
-  pairedHeader: { alignItems: 'center', marginBottom: Spacing.xl },
-  pairedIconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.success[500] + '20', justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.lg },
-  pairedTitle: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.xxl, fontWeight: Typography.weights.bold, color: Colors.neutral[0] },
-  pairedSub: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[400], marginTop: Spacing.xs },
-  infoCard: { width: '100%', backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.neutral[800] },
-  infoLabel: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, color: Colors.neutral[400] },
-  infoValue: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.medium, color: Colors.neutral[0] },
-  statusCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, backgroundColor: Colors.success[500] + '15', borderRadius: Radius.lg, padding: Spacing.md, width: '100%', marginBottom: Spacing.xl },
-  statusText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.sm, color: Colors.success[400], flex: 1, lineHeight: 20 },
-  unpairBtn: { backgroundColor: Colors.neutral[850], borderRadius: Radius.lg, paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, borderWidth: 1, borderColor: Colors.error[500] + '30' },
-  unpairText: { fontFamily: Typography.fontFamily, fontSize: Typography.sizes.md, fontWeight: Typography.weights.medium, color: Colors.error[400] },
+  featuresTitle: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
+    color: Colors.neutral[0],
+    textAlign: 'right',
+    marginBottom: 2,
+  },
+  featureRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: Spacing.sm },
+  featureIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureText: {
+    flex: 1,
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    color: Colors.neutral[300],
+    textAlign: 'right',
+    lineHeight: 20,
+  },
+
+  footerNote: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.neutral[600],
+    textAlign: 'center',
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  switchRoleLink: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.neutral[500],
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+
+  gridTitleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+  },
+  gridTitle: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.lg,
+    fontWeight: Typography.weights.bold,
+    color: Colors.neutral[0],
+  },
+  grid: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  tile: {
+    width: '48.5%',
+    backgroundColor: Colors.neutral[850],
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.neutral[800],
+    padding: Spacing.md,
+    gap: 6,
+  },
+  tileLabel: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.xs,
+    color: Colors.neutral[400],
+    textAlign: 'right',
+  },
+  tileValue: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.bold,
+    color: Colors.neutral[0],
+    textAlign: 'right',
+    lineHeight: 20,
+  },
+
+  messageCard: {
+    backgroundColor: Colors.warning[500] + '12',
+    borderWidth: 1.5,
+    borderColor: Colors.warning[500] + '55',
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  messageHeader: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
+  messageTitle: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
+    color: Colors.warning[400],
+  },
+  messageText: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.md,
+    color: Colors.neutral[100],
+    textAlign: 'right',
+    lineHeight: 24,
+  },
+  messageBtn: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.warning[500],
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    marginTop: 4,
+  },
+  messageBtnText: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onColor,
+  },
+
+  disconnectBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.error[500] + '50',
+    backgroundColor: Colors.error[500] + '0D',
+  },
+  disconnectText: {
+    fontFamily: Typography.fontFamily,
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
+    color: Colors.error[400],
+  },
 });
